@@ -14,13 +14,16 @@ public:
 
     Context(const Context&) = delete;
     Context& operator=(const Context&) = delete;
+    Context(const Context&&) = delete;
+    Context& operator=(const Context&&) = delete;
 
     void defer(DeletionFn fn);
     void flush_deferred();
 private:
     void create_instance();
+    void create_debug_messenger();
 
-    std::vector<const char *> GetRequiredGLFWExtensions();
+    std::vector<const char *> get_required_glfw_extensions();
 private:
     VmaAllocator m_allocator{nullptr};
     VkInstance m_instance{VK_NULL_HANDLE};
@@ -28,6 +31,14 @@ private:
     VkDevice m_device{VK_NULL_HANDLE};
 
     std::vector<DeletionFn> m_deletion_queue{};
+
+    VkDebugUtilsMessengerEXT m_debug_messenger{VK_NULL_HANDLE};
+    std::vector<const char*> m_validation_layers{"VK_LAYER_KHRONOS_validation"};
+    #ifndef NDEBUG
+        const bool m_enable_validation_layers{false};
+    #else
+        const bool m_enable_validation_layers{true};
+    #endif
 };
 
 }
