@@ -16,6 +16,7 @@ public:
   void add_dependency(const std::string& name, VulkanHandler handle);
 
   const std::string& get_name() const { return m_name; }
+  DeletionFn& get_deletion_fn() { return m_deletionFn; }
 protected:
   std::string m_name{};
   std::unordered_map<std::string, VulkanHandler> m_dependecies{};

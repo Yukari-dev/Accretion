@@ -18,7 +18,6 @@ void GLFWHandler::create(){
   m_window = glfwCreateWindow(m_width, m_height, m_title.c_str(), nullptr, nullptr);
   if (!m_window)
     throw std::runtime_error("FATAL ERROR: Failed to create GLFW Window.");
-  std::cout << "INFO: Window is created\n";
 }
 
 void GLFWHandler::close_window(){
