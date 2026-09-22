@@ -1,4 +1,5 @@
 #include "core/Context.hpp"
+#include "core/handlers/GLFWHandler.hpp"
 #include <GLFW/glfw3.h>
 #include <cstring>
 #include <iostream>
@@ -81,8 +82,9 @@ bool check_validation_layers(const std::vector<const char*> validation_layers){
 }
 
 Context::Context(){
-    create_instance();
-    create_debug_messenger();
+    add_handler<GLFWHandler>(800, 600, "title");
+    // create_instance();
+    // create_debug_messenger();
 }
 
 Context::~Context(){
@@ -96,8 +98,6 @@ Context::~Context(){
 }
 
 void Context::create_instance(){
-    if (!glfwInit())
-        throw std::runtime_error("FATAL ERROR: Failed to initialize GLFW.");
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pApplicationName = "Accretion";
