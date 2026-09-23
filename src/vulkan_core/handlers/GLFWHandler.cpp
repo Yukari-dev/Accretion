@@ -1,5 +1,4 @@
 #include "vulkan_core/handlers/GLFWHandler.hpp"
-#include <iostream>
 #include <stdexcept>
 
 namespace Accretion{

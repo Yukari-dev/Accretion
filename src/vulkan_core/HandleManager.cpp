@@ -1,15 +1,15 @@
 #include "vulkan_core/HandleManager.hpp"
 #include "vulkan_core/handlers/CommandPoolHandler.hpp"
 #include "vulkan_core/handlers/DeviceHandler.hpp"
-#include "vulkan_core/handlers/GLFWHandler.hpp"
 #include "vulkan_core/handlers/InstanceHandler.hpp"
+#include "vulkan_core/handlers/SDLHandler.hpp"
 #include "vulkan_core/handlers/SurfaceHandler.hpp"
 #include "vulkan_core/handlers/SwapChainHandler.hpp"
 
 namespace Accretion{
 
 void HandleManager::initialize(uint32_t width, uint32_t height, const std::string& title){
-  add_handler<GLFWHandler>(width, height, title);
+  add_handler<SDLHandler>(width, height, title);
   add_handler<InstanceHandler>();
   add_handler<SurfaceHandler>();
   add_handler<DeviceHandler>();

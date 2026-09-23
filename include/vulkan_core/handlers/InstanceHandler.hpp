@@ -15,6 +15,7 @@ private:
   void setup_debug_messenger();
 
   std::vector<const char *> get_required_glfw_extensions();
+  std::vector<const char *> get_required_sdl_extensions();
 private:
   VkInstance m_instance{VK_NULL_HANDLE};
 

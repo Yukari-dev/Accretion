@@ -1,5 +1,4 @@
 #include "vulkan_core/Context.hpp"
-#include <GLFW/glfw3.h>
 
 namespace Accretion{
 

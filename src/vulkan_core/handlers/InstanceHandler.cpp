@@ -1,5 +1,6 @@
 #include "vulkan_core/handlers/InstanceHandler.hpp"
 #include <GLFW/glfw3.h>
+#include <SDL3/SDL_vulkan.h>
 #include <iostream>
 
 namespace Accretion{
@@ -99,7 +100,7 @@ void InstanceHandler::create_instance(){
     appInfo.engineVersion = VK_VERSION_1_0;
     appInfo.apiVersion = VK_API_VERSION_1_3;;
 
-    auto extensions = get_required_glfw_extensions();
+    auto extensions = get_required_sdl_extensions();
 
     VkInstanceCreateInfo info{};
     info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -137,6 +138,15 @@ std::vector<const char*> InstanceHandler::get_required_glfw_extensions(){
     uint32_t count{};
     const char **glfwExtensions = glfwGetRequiredInstanceExtensions(&count);
     std::vector<const char*> extensions(glfwExtensions, glfwExtensions + count);
+    if(m_enable_validation_layers)
+        extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    return extensions;
+}
+
+std::vector<const char*> InstanceHandler::get_required_sdl_extensions(){
+    uint32_t count{};
+    const char *const *sdlExtensions = SDL_Vulkan_GetInstanceExtensions(&count);
+    std::vector<const char*> extensions(sdlExtensions, sdlExtensions + count);
     if(m_enable_validation_layers)
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
     return extensions;

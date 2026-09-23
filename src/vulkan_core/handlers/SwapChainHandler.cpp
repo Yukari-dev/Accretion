@@ -1,10 +1,9 @@
 #include "vulkan_core/handlers/SwapChainHandler.hpp"
 #include "vulkan_core/handlers/DeviceHandler.hpp"
-#include "vulkan_core/handlers/GLFWHandler.hpp"
+#include "vulkan_core/handlers/SDLHandler.hpp"
 #include "vulkan_core/handlers/SurfaceHandler.hpp"
 #include <GLFW/glfw3.h>
 #include <algorithm>
-#include <iostream>
 #include <stdexcept>
 
 namespace Accretion{
@@ -14,7 +13,7 @@ SwapChainHandler::SwapChainHandler() : VulkanHandler("SwapChainHandler", [&]{
     vkDestroyImageView(get_dependency<DeviceHandler>().get_device(), image_view, nullptr);
   vkDestroySwapchainKHR(get_dependency<DeviceHandler>().get_device(), m_swap_chain, nullptr);
 }){
-  request_dependency("GLFWHandler");
+  request_dependency("SDLHandler");
   request_dependency("SurfaceHandler");
   request_dependency("DeviceHandler");
 }
@@ -119,7 +118,7 @@ VkExtent2D SwapChainHandler::choose_extent(const VkSurfaceCapabilitiesKHR& cap){
     return cap.currentExtent;
   
   int width, height;
-  glfwGetFramebufferSize(get_dependency<GLFWHandler>().get_window(), &width, &height);
+  SDL_GetWindowSize(get_dependency<SDLHandler>().get_window(), &width, &height);
   VkExtent2D extent{};
   extent.width = width;
   extent.height = height;

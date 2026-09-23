@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
+find_package(SDL3 REQUIRED)
 
 file(GLOB_RECURSE ACCRETION_SOURCES
     "src/vulkan_core/*.cpp"
@@ -19,7 +20,7 @@ target_include_directories(Accretion PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party
 )
 
-target_link_libraries(Accretion PUBLIC Vulkan::Vulkan glm glfw)
+target_link_libraries(Accretion PUBLIC Vulkan::Vulkan glm glfw SDL3::SDL3)
 
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/sandbox/main.cpp")
