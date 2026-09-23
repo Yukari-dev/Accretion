@@ -1,9 +1,9 @@
 #include "vulkan_core/handlers/DeviceHandler.hpp"
 #include "vulkan_core/handlers/InstanceHandler.hpp"
 #include "vulkan_core/handlers/SurfaceHandler.hpp"
-#include "vulkan_core/utils/VulkanUtils.hpp"
 #include <map>
 #include <set>
+#include <stdexcept>
 
 namespace Accretion{
 
@@ -17,6 +17,7 @@ DeviceHandler::DeviceHandler() : VulkanHandler("DeviceHandler", [&]{
 
 void DeviceHandler::create(){
   create_physical_device();
+  create_logical_device();
 }
 
 void DeviceHandler::create_physical_device(){
@@ -37,19 +38,50 @@ void DeviceHandler::create_physical_device(){
     throw std::runtime_error("Failed to find a suitable GPU");
 }
 
+void DeviceHandler::create_logical_device(){
+  m_indices = FindQueueFamilies(m_physical_device, get_dependency<SurfaceHandler>().get_surface());
+
+  std::set<uint32_t> unique_families{m_indices.graphics_family.value(), m_indices.present_family.value()};
+  std::vector<VkDeviceQueueCreateInfo> queues_info{};
+  float priority{1.0f};
+  for(const auto& family : unique_families){
+    VkDeviceQueueCreateInfo device_queue{};
+    device_queue.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO; 
+    device_queue.pQueuePriorities = &priority;
+    device_queue.queueFamilyIndex = family;
+    device_queue.queueCount = 1;
+    queues_info.push_back(device_queue);
+  }
+
+  VkPhysicalDeviceFeatures device_features{};
+  VkDeviceCreateInfo device_info{};
+  device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+  device_info.queueCreateInfoCount = static_cast<uint32_t>(queues_info.size());
+  device_info.pQueueCreateInfos = queues_info.data();
+  device_info.enabledExtensionCount = static_cast<uint32_t>(m_device_extensions.size());
+  device_info.ppEnabledExtensionNames = m_device_extensions.data();
+  device_info.pEnabledFeatures = &device_features;
+
+  VkResult result = vkCreateDevice(m_physical_device, &device_info, nullptr, &m_device);
+  if(result != VK_SUCCESS)
+    throw std::runtime_error("FATAL ERROR: Failed to create logical device.");
+  vkGetDeviceQueue(m_device, m_indices.graphics_family.value(), 0, &m_graphics_queue);
+  vkGetDeviceQueue(m_device, m_indices.present_family.value(), 0, &m_present_queue);
+}
+
 int DeviceHandler::rate_device_suitability(VkPhysicalDevice device){
   if(!is_physical_device_suitable(device)) return 0;
-  VkPhysicalDeviceProperties deviceProperties;
-  VkPhysicalDeviceFeatures deviceFeatures;
-  vkGetPhysicalDeviceProperties(device, &deviceProperties);
-  vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+  VkPhysicalDeviceProperties device_properties;
+  VkPhysicalDeviceFeatures device_features;
+  vkGetPhysicalDeviceProperties(device, &device_properties);
+  vkGetPhysicalDeviceFeatures(device, &device_features);
   int score{0};
-  if (deviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+  if (device_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
     score += 1000;
 
-  score += deviceProperties.limits.maxImageDimension2D;
+  score += device_properties.limits.maxImageDimension2D;
 
-  if(!deviceFeatures.geometryShader)
+  if(!device_features.geometryShader)
     return 0;
 
   return score;
