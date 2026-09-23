@@ -1,5 +1,5 @@
 #pragma once
-#include "core/VulkanHandler.hpp"
+#include "vulkan_core/VulkanHandler.hpp"
 #include <vulkan/vulkan.hpp>
 
 namespace Accretion{
@@ -9,6 +9,7 @@ public:
   InstanceHandler();
 
   void create() override;
+  VkInstance& get_vk_instance() { return m_instance; }
 private:
   void create_instance();
   void setup_debug_messenger();

@@ -9,7 +9,7 @@ find_package(Vulkan REQUIRED)
 find_package(glfw3 REQUIRED)
 
 file(GLOB_RECURSE ACCRETION_SOURCES
-    "src/core/*.cpp"
+    "src/vulkan_core/*.cpp"
 )
 
 add_library(Accretion STATIC ${ACCRETION_SOURCES})

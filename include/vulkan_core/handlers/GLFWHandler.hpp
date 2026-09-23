@@ -1,5 +1,5 @@
 #pragma once
-#include "core/VulkanHandler.hpp"
+#include "vulkan_core/VulkanHandler.hpp"
 #include <GLFW/glfw3.h>
 #include <cstdint>
 
