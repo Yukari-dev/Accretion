@@ -1,8 +1,10 @@
 #include "vulkan_core/HandleManager.hpp"
+#include "vulkan_core/handlers/CommandPoolHandler.hpp"
 #include "vulkan_core/handlers/DeviceHandler.hpp"
 #include "vulkan_core/handlers/GLFWHandler.hpp"
 #include "vulkan_core/handlers/InstanceHandler.hpp"
 #include "vulkan_core/handlers/SurfaceHandler.hpp"
+#include "vulkan_core/handlers/SwapChainHandler.hpp"
 
 namespace Accretion{
 
@@ -11,6 +13,8 @@ void HandleManager::initialize(uint32_t width, uint32_t height, const std::strin
   add_handler<InstanceHandler>();
   add_handler<SurfaceHandler>();
   add_handler<DeviceHandler>();
+  add_handler<SwapChainHandler>();
+  add_handler<CommandPoolHandler>();
 
   fulfill_dependencies_requests();
 

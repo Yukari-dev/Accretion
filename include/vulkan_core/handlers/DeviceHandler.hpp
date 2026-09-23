@@ -13,6 +13,7 @@ public:
 
   VkDevice& get_device() { return m_device; }
   VkPhysicalDevice& get_physical_device() { return m_physical_device; }
+  uint32_t get_graphics_queue_family() const { return m_indices.graphics_family.value(); }
 private:
   void create_physical_device();
   void create_logical_device();

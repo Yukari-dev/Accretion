@@ -4,6 +4,7 @@
 #include "vulkan_core/handlers/SurfaceHandler.hpp"
 #include <GLFW/glfw3.h>
 #include <algorithm>
+#include <iostream>
 #include <stdexcept>
 
 namespace Accretion{
@@ -11,8 +12,6 @@ namespace Accretion{
 SwapChainHandler::SwapChainHandler() : VulkanHandler("SwapChainHandler", [&]{
   for(auto& image_view : m_image_views)
     vkDestroyImageView(get_dependency<DeviceHandler>().get_device(), image_view, nullptr);
-  for(auto& image : m_images)
-    vkDestroyImage(get_dependency<DeviceHandler>().get_device(), image, nullptr);
   vkDestroySwapchainKHR(get_dependency<DeviceHandler>().get_device(), m_swap_chain, nullptr);
 }){
   request_dependency("GLFWHandler");
@@ -22,7 +21,7 @@ SwapChainHandler::SwapChainHandler() : VulkanHandler("SwapChainHandler", [&]{
 
 void SwapChainHandler::create(){
   create_swap_chain();
-  create_image_views();
+  // create_image_views();
 }
 
 void SwapChainHandler::create_swap_chain(){
