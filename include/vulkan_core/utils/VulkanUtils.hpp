@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <optional>
+#include <vector>
 #include <vulkan/vulkan.hpp>
 
 namespace Accretion{
@@ -14,6 +15,14 @@ struct QueueFamilyIndices{
   }
 };
 
-QueueFamilyIndices FindQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
+QueueFamilyIndices find_queue_families(VkPhysicalDevice device, VkSurfaceKHR surface);
+
+struct SwapChainSupportProperties{
+  VkSurfaceCapabilitiesKHR capabilities{}; 
+  std::vector<VkSurfaceFormatKHR> formats{};
+  std::vector<VkPresentModeKHR> present_modes{};
+};
+
+SwapChainSupportProperties query_swap_chain_support_properties(VkPhysicalDevice device, VkSurfaceKHR surface);
 
 }

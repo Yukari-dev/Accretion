@@ -10,6 +10,9 @@ public:
   DeviceHandler();
   
   void create() override;
+
+  VkDevice& get_device() { return m_device; }
+  VkPhysicalDevice& get_physical_device() { return m_physical_device; }
 private:
   void create_physical_device();
   void create_logical_device();

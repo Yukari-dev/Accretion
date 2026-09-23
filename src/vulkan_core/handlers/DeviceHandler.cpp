@@ -39,7 +39,7 @@ void DeviceHandler::create_physical_device(){
 }
 
 void DeviceHandler::create_logical_device(){
-  m_indices = FindQueueFamilies(m_physical_device, get_dependency<SurfaceHandler>().get_surface());
+  m_indices = find_queue_families(m_physical_device, get_dependency<SurfaceHandler>().get_surface());
 
   std::set<uint32_t> unique_families{m_indices.graphics_family.value(), m_indices.present_family.value()};
   std::vector<VkDeviceQueueCreateInfo> queues_info{};
@@ -88,13 +88,14 @@ int DeviceHandler::rate_device_suitability(VkPhysicalDevice device){
 }
 
 bool DeviceHandler::is_physical_device_suitable(VkPhysicalDevice device){
-  QueueFamilyIndices indices = FindQueueFamilies(device, get_dependency<SurfaceHandler>().get_surface());
+  QueueFamilyIndices indices = find_queue_families(device, get_dependency<SurfaceHandler>().get_surface());
   bool extensionSupport = check_physical_device_extension_support(device);
-  //TODO: swapchain format and presnetModes support.
+  bool swapchain_compatible{false};
   if(extensionSupport){
-    //NOTE: here goes the SwapChainSupprotDetails to get the beeetttterrrr GPU (even tho I only have 1 (integrated btw))
+    SwapChainSupportProperties properties = query_swap_chain_support_properties(device, get_dependency<SurfaceHandler>().get_surface());
+    swapchain_compatible = !properties.formats.empty() && !properties.present_modes.empty();
   }
-  return indices.IsComplete() && extensionSupport;
+  return indices.IsComplete() && swapchain_compatible && extensionSupport;
 }
 
 bool DeviceHandler::check_physical_device_extension_support(VkPhysicalDevice device){
