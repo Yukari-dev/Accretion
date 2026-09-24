@@ -1,4 +1,5 @@
 #include "vulkan_core/HandleManager.hpp"
+#include "vulkan_core/handlers/CommandBufferHandler.hpp"
 #include "vulkan_core/handlers/CommandPoolHandler.hpp"
 #include "vulkan_core/handlers/DeviceHandler.hpp"
 #include "vulkan_core/handlers/InstanceHandler.hpp"
@@ -15,6 +16,7 @@ void HandleManager::initialize(uint32_t width, uint32_t height, const std::strin
   add_handler<DeviceHandler>();
   add_handler<SwapChainHandler>();
   add_handler<CommandPoolHandler>();
+  add_handler<CommandBufferHandler>();
 
   fulfill_dependencies_requests();
 

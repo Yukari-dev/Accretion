@@ -3,7 +3,7 @@
 
 namespace Accretion{
 
-CommandPoolHandler::CommandPoolHandler() : VulkanHandler("RenderPassHandler", [&]{
+CommandPoolHandler::CommandPoolHandler() : VulkanHandler("CommandPoolHandler", [&]{
   if(m_command_pool)
     vkDestroyCommandPool(get_dependency<DeviceHandler>().get_device(), m_command_pool, nullptr);
 }) {
