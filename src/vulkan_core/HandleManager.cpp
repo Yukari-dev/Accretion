@@ -6,6 +6,7 @@
 #include "vulkan_core/handlers/SDLHandler.hpp"
 #include "vulkan_core/handlers/SurfaceHandler.hpp"
 #include "vulkan_core/handlers/SwapChainHandler.hpp"
+#include "vulkan_core/handlers/SyncHandler.hpp"
 
 namespace Accretion{
 
@@ -17,6 +18,7 @@ void HandleManager::initialize(uint32_t width, uint32_t height, const std::strin
   add_handler<SwapChainHandler>();
   add_handler<CommandPoolHandler>();
   add_handler<CommandBufferHandler>();
+  add_handler<SyncHandler>();
 
   fulfill_dependencies_requests();
 
