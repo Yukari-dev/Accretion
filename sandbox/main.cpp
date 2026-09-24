@@ -2,5 +2,7 @@
 
 int main(){
     Accretion::Context context{};
+
+    context.run();
     return 0;
 }

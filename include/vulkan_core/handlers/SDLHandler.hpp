@@ -13,6 +13,9 @@ public:
   void run();
 
   void update_size();
+  uint32_t get_width() { return m_width; }
+  uint32_t get_height() { return m_height; }
+
   SDL_Window *get_window() { return m_window; }
 private:
   SDL_Window *m_window{nullptr};

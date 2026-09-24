@@ -15,22 +15,6 @@ public:
 
     void defer(DeletionFn fn);
     void flush_deferred();
-private:
-    template <typename T, typename = typename std::enable_if<std::is_base_of<VulkanHandler, T>::value>::type,
-    typename... Args>
-    void add_handler(Args&&... args){
-        auto handler = std::make_unique<T>(std::forward<Args>(args)...);
-        std::string name = handler->get_name();
-        for(const auto& [extisting_name, ptr] : m_handlers){
-            if(extisting_name == name){
-                std::cerr << "WARNING: Duplicate handlers: " << ptr->get_name() << '\n';
-                return;
-            }
-        }
-        T* ptr = handler.get();
-        m_handlers.emplace_back(name, std::move(handler));
-        defer(ptr->get_deletion_fn());
-    }
 
     template <typename T>
     T& find_handler_by_name(const std::string& name){
@@ -48,6 +32,22 @@ private:
             throw std::runtime_error("ERROR: Handler '" + name + "' is not one of the requested type");
 
         return *handler;
+    }
+private:
+    template <typename T, typename = typename std::enable_if<std::is_base_of<VulkanHandler, T>::value>::type,
+    typename... Args>
+    void add_handler(Args&&... args){
+        auto handler = std::make_unique<T>(std::forward<Args>(args)...);
+        std::string name = handler->get_name();
+        for(const auto& [extisting_name, ptr] : m_handlers){
+            if(extisting_name == name){
+                std::cerr << "WARNING: Duplicate handlers: " << ptr->get_name() << '\n';
+                return;
+            }
+        }
+        T* ptr = handler.get();
+        m_handlers.emplace_back(name, std::move(handler));
+        defer(ptr->get_deletion_fn());
     }
 private:
     std::vector<std::pair<std::string, std::unique_ptr<VulkanHandler>>> m_handlers;

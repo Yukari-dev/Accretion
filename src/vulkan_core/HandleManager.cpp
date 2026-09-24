@@ -24,6 +24,7 @@ void HandleManager::initialize(uint32_t width, uint32_t height, const std::strin
   fulfill_dependencies_requests();
 
   initialize_handlers();
+  /* 
 
   bool running{true};
 
@@ -144,6 +145,7 @@ void HandleManager::initialize(uint32_t width, uint32_t height, const std::strin
   }
 
   vkDeviceWaitIdle(device);
+  */
 }
 
 void HandleManager::initialize_handlers(){
