@@ -19,4 +19,10 @@ void SDLHandler::create(){
   SDL_ShowWindow(m_window);
 }
 
+void SDLHandler::update_size(){
+  int width{}, height{};
+  SDL_GetWindowSize(m_window, &width, &height);
+  m_width = width; m_height = height;
+}
+
 }

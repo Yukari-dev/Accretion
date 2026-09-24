@@ -28,7 +28,10 @@ private:
   QueueFamilyIndices m_indices{};
   VkQueue m_graphics_queue{};
   VkQueue m_present_queue{};
-  const std::vector<const char*> m_device_extensions{VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+  const std::vector<const char*> m_device_extensions{
+    VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+  };
 };
 
 }

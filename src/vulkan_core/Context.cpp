@@ -11,4 +11,8 @@ Context::~Context(){
     m_handle_manager->flush_deferred();
 }
 
+void Context::run(){
+
+}
+
 }

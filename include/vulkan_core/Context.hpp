@@ -16,6 +16,8 @@ public:
   Context(const Context &&) = delete;
   Context &operator=(const Context &&) = delete;
 
+  void run();
+
 private:
   std::unique_ptr<HandleManager> m_handle_manager{nullptr};
 };

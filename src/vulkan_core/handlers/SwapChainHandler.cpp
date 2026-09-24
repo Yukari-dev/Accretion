@@ -19,8 +19,13 @@ SwapChainHandler::SwapChainHandler() : VulkanHandler("SwapChainHandler", [&]{
 }
 
 void SwapChainHandler::create(){
+  if(m_swap_chain != VK_NULL_HANDLE){
+    vkDeviceWaitIdle(get_dependency<DeviceHandler>().get_device());
+    m_image_views.clear();
+    m_images.clear();
+  }
   create_swap_chain();
-  // create_image_views();
+  create_image_views();
 }
 
 void SwapChainHandler::create_swap_chain(){

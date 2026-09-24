@@ -98,7 +98,7 @@ void InstanceHandler::create_instance(){
     appInfo.applicationVersion = VK_VERSION_1_0;
     appInfo.pEngineName = "Accretion engine";
     appInfo.engineVersion = VK_VERSION_1_0;
-    appInfo.apiVersion = VK_API_VERSION_1_3;;
+    appInfo.apiVersion = VK_API_VERSION_1_3;
 
     auto extensions = get_required_sdl_extensions();
 

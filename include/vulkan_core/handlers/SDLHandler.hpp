@@ -12,6 +12,7 @@ public:
   void create() override;
   void run();
 
+  void update_size();
   SDL_Window *get_window() { return m_window; }
 private:
   SDL_Window *m_window{nullptr};
