@@ -2,6 +2,7 @@
 #include "vulkan_core/HandleManager.hpp"
 #include "vulkan_core/handlers/CommandBufferHandler.hpp"
 #include "vulkan_core/handlers/DeviceHandler.hpp"
+#include "vulkan_core/handlers/PipelineHandler.hpp"
 #include "vulkan_core/handlers/SDLHandler.hpp"
 #include "vulkan_core/handlers/SwapChainHandler.hpp"
 #include "vulkan_core/handlers/SyncHandler.hpp"
@@ -30,6 +31,7 @@ private:
   SwapChainHandler* m_swap_chain{nullptr};
   CommandBufferHandler* m_command_buffer{nullptr};
   SyncHandler* m_sync{nullptr};
+  PipelineHandler* m_pipeline{nullptr};
 };
 
 }

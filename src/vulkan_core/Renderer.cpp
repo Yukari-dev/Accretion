@@ -9,6 +9,7 @@ Renderer::Renderer(HandleManager& handler_manager) : m_handler_manager(handler_m
   m_swap_chain = &m_handler_manager.find_handler_by_name<SwapChainHandler>("SwapChainHandler");
   m_command_buffer = &m_handler_manager.find_handler_by_name<CommandBufferHandler>("CommandBufferHandler");
   m_sync = &m_handler_manager.find_handler_by_name<SyncHandler>("SyncHandler");
+  m_pipeline = &m_handler_manager.find_handler_by_name<PipelineHandler>("PipelineHandler");
 }
 
 void Renderer::draw_frame(){
@@ -40,21 +41,9 @@ void Renderer::update_frame(){
   VkCommandBuffer& cmd = m_command_buffer->get_command_buffer(m_current_frame);
   vkResetCommandBuffer(cmd, 0);
 
-  VkRenderingInfo rendering_info{};
-  rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
-  rendering_info.renderArea = {{0, 0}, {m_sdl->get_width(), m_sdl->get_height()}};
-  rendering_info.layerCount = 1;
-  rendering_info.colorAttachmentCount = 1;
-
-  VkRenderingAttachmentInfo color_info{};
-  color_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-  color_info.imageView = m_swap_chain->get_image_views()[m_image_index];
-  color_info.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-  color_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-  color_info.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-  color_info.clearValue = {{1.0f, 1.0f, 1.0f, 1.0f}};
-
-  rendering_info.pColorAttachments = &color_info;
+  VkCommandBufferBeginInfo begin_info{};
+  begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+  vkBeginCommandBuffer(cmd, &begin_info);
 
   VkImageMemoryBarrier barrier{};
   barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -73,11 +62,43 @@ void Renderer::update_frame(){
     0, 0, nullptr, 0, nullptr, 1, &barrier
   );
 
+  VkRenderingAttachmentInfo color_info{};
+  color_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+  color_info.imageView = m_swap_chain->get_image_views()[m_image_index];
+  color_info.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+  color_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+  color_info.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+  color_info.clearValue = {{0.0f, 0.0f, 0.0f, 1.0f}};
+
+  VkRenderingInfo rendering_info{};
+  rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+  rendering_info.renderArea = {{0, 0}, {m_sdl->get_width(), m_sdl->get_height()}};
+  rendering_info.layerCount = 1;
+  rendering_info.colorAttachmentCount = 1;
+  rendering_info.pColorAttachments = &color_info;
+
   vkCmdBeginRendering(cmd, &rendering_info);
+
+  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline->get_pipeline());
+
+  VkViewport viewport{};
+  viewport.x = 0.0f;
+  viewport.y = 0.0f;
+  viewport.width = static_cast<float>(m_sdl->get_width());
+  viewport.height = static_cast<float>(m_sdl->get_height());
+  viewport.minDepth = 0.0f;
+  viewport.maxDepth = 1.0f;
+  vkCmdSetViewport(cmd, 0, 1, &viewport);
+
+  VkRect2D scissor{};
+  scissor.offset = {0, 0};
+  scissor.extent = {m_sdl->get_width(), m_sdl->get_height()};
+  vkCmdSetScissor(cmd, 0, 1, &scissor);
 }
 
 void Renderer::record_frame(){
-
+  VkCommandBuffer& cmd = m_command_buffer->get_command_buffer(m_current_frame);
+  vkCmdDraw(cmd, 3, 1, 0, 0);
 }
 
 void Renderer::submit_frame(){
@@ -115,6 +136,7 @@ void Renderer::submit_frame(){
   submit_info.pSignalSemaphores = signal_sems;
 
   VkFence current_fence = m_sync->get_fence(m_current_frame);
+  vkResetFences(m_device->get_device(), 1, &current_fence);
   vkQueueSubmit(m_device->get_graphics_queue(), 1, &submit_info, current_fence);
 }
 

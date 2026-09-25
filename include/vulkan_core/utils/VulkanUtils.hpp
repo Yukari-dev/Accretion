@@ -25,4 +25,6 @@ struct SwapChainSupportProperties{
 
 SwapChainSupportProperties query_swap_chain_support_properties(VkPhysicalDevice device, VkSurfaceKHR surface);
 
+std::vector<uint32_t> ReadFileUint32(const std::string& filename);
+
 }

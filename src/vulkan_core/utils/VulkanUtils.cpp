@@ -1,4 +1,5 @@
 #include "vulkan_core/utils/VulkanUtils.hpp"
+#include <fstream>
 
 namespace Accretion{
 
@@ -45,6 +46,18 @@ SwapChainSupportProperties query_swap_chain_support_properties(VkPhysicalDevice 
   }
 
   return properties;
+}
+
+std::vector<uint32_t> ReadFileUint32(const std::string& filename){
+  std::ifstream file(filename, std::ios::ate | std::ios::binary);
+  if(!file.is_open())
+    throw std::runtime_error("Failed to open file: " + filename);
+  size_t fileSize = static_cast<size_t>(file.tellg());
+  std::vector<uint32_t> buffer(fileSize / sizeof(uint32_t));
+  file.seekg(0);
+  file.read(reinterpret_cast<char*>(buffer.data()), fileSize);
+  file.close();
+  return buffer;
 }
 
 }
