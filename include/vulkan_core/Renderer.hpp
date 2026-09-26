@@ -1,13 +1,14 @@
 #pragma once
 #include "vulkan_core/HandleManager.hpp"
 #include "vulkan_core/handlers/CommandBufferHandler.hpp"
-#include "vulkan_core/handlers/DeviceHandler.hpp"
 #include "vulkan_core/handlers/PipelineHandler.hpp"
 #include "vulkan_core/handlers/SDLHandler.hpp"
 #include "vulkan_core/handlers/SwapChainHandler.hpp"
 #include "vulkan_core/handlers/SyncHandler.hpp"
 
 namespace Accretion{
+
+class DeviceHandler;
 
 class Renderer{
 public:

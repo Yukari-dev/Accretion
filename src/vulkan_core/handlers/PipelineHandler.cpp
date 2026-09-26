@@ -1,7 +1,8 @@
 #include "vulkan_core/handlers/PipelineHandler.hpp"
+#include "vulkan_core/Shader.hpp"
 #include "vulkan_core/handlers/DeviceHandler.hpp"
 #include "vulkan_core/handlers/SwapChainHandler.hpp"
-#include "vulkan_core/utils/VulkanUtils.hpp"
+#include <glm/glm.hpp>
 #include <stdexcept>
 
 namespace Accretion{
@@ -11,6 +12,8 @@ PipelineHandler::PipelineHandler() : VulkanHandler("PipelineHandler", [&]{
     vkDestroyPipeline(get_dependency<DeviceHandler>().get_device(), m_pipeline, nullptr);
   if(m_pipeline_layout)
     vkDestroyPipelineLayout(get_dependency<DeviceHandler>().get_device(), m_pipeline_layout, nullptr);
+  if(m_shader_instance)
+    m_shader_instance.value().ShaderInstance::~ShaderInstance();
 }){
   request_dependency("SwapChainHandler");
   request_dependency("DeviceHandler");
@@ -18,39 +21,44 @@ PipelineHandler::PipelineHandler() : VulkanHandler("PipelineHandler", [&]{
 
 void PipelineHandler::create(){
   VkDevice& device = get_dependency<DeviceHandler>().get_device();
+  VmaAllocator& allocator = get_dependency<DeviceHandler>().get_allocator();
   VkExtent2D extent = get_dependency<SwapChainHandler>().get_extent();
 
-  auto vert_code = ReadFileUint32("shaders/triangle.vert.spv");
-  auto frag_code = ReadFileUint32("shaders/triangle.frag.spv");
+  Shader vert_shader = Shader("shaders/triangle.vert.spv", device);
+  Shader frag_shader = Shader("shaders/triangle.frag.spv", device);
 
-  VkShaderModuleCreateInfo vert_module_info{};
-  vert_module_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-  vert_module_info.codeSize = vert_code.size() * sizeof(uint32_t);
-  vert_module_info.pCode = vert_code.data();
+  VkDescriptorSetLayoutBinding binding{};
+  binding.binding = 0;
+  binding.descriptorCount = 1;
+  binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
-  VkShaderModule vert_module{};
-  if(vkCreateShaderModule(device, &vert_module_info, nullptr, &vert_module) != VK_SUCCESS)
-    throw std::runtime_error("ERROR: Couldn't create the vertex Shader.");
+  VkDescriptorSetLayoutCreateInfo descriptor_layout_info{};
+  descriptor_layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+  descriptor_layout_info.bindingCount = 1;
+  descriptor_layout_info.pBindings = &binding;
 
-  VkShaderModuleCreateInfo frag_module_info{};
-  frag_module_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-  frag_module_info.codeSize = frag_code.size() * sizeof(uint32_t);
-  frag_module_info.pCode = frag_code.data();
+  VkDescriptorSetLayout descriptor_layout{};
+  vkCreateDescriptorSetLayout(device, &descriptor_layout_info, nullptr, &descriptor_layout);
 
-  VkShaderModule frag_module{};
-  if(vkCreateShaderModule(device, &frag_module_info, nullptr, &frag_module) != VK_SUCCESS)
-    throw std::runtime_error("ERROR: Couldn't create a Shader.");
+  VkPipelineLayoutCreateInfo layout_info{};
+  layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+  layout_info.setLayoutCount = 1;
+  layout_info.pSetLayouts = &descriptor_layout;
+
+  if(vkCreatePipelineLayout(device, &layout_info, nullptr, &m_pipeline_layout) != VK_SUCCESS)
+    throw std::runtime_error("ERROR: Failed to create Pipeline Layout.");
 
   VkPipelineShaderStageCreateInfo vert_stage_info{};
   vert_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
   vert_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-  vert_stage_info.module = vert_module;
+  vert_stage_info.module = vert_shader.get_module();
   vert_stage_info.pName = "main";
 
   VkPipelineShaderStageCreateInfo frag_stage_info{};
   frag_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
   frag_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-  frag_stage_info.module = frag_module;
+  frag_stage_info.module = frag_shader.get_module();
   frag_stage_info.pName = "main";
 
   VkPipelineShaderStageCreateInfo stages[2]{vert_stage_info, frag_stage_info};
@@ -152,13 +160,6 @@ void PipelineHandler::create(){
   depth_stencil.depthBoundsTestEnable = VK_FALSE;
   depth_stencil.stencilTestEnable = VK_FALSE;
 
-
-  VkPipelineLayoutCreateInfo layout_info{};
-  layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-
-  if(vkCreatePipelineLayout(device, &layout_info, nullptr, &m_pipeline_layout) != VK_SUCCESS)
-    throw std::runtime_error("ERROR: Failed to create Pipeline Layout.");
-
   VkGraphicsPipelineCreateInfo create_info{};
   create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
   create_info.pNext = &rendering_info;
@@ -179,8 +180,9 @@ void PipelineHandler::create(){
   VkResult result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &create_info, nullptr, &m_pipeline);
   if(result != VK_SUCCESS)
     throw std::runtime_error("FATAL ERROR: Failed to create Graphics Pipeline.");
-  vkDestroyShaderModule(device, vert_module, nullptr);
-  vkDestroyShaderModule(device, frag_module, nullptr);
+
+  m_shader_instance.emplace(vert_shader, device, allocator, descriptor_layout);
+  m_shader_instance->set("u_offset_x", 1);
 }
 
 }

@@ -8,6 +8,8 @@
 namespace Accretion{
 
 DeviceHandler::DeviceHandler() : VulkanHandler("DeviceHandler", [&]{
+  if(m_allocator)
+    vmaDestroyAllocator(m_allocator);
   if(m_device)
     vkDestroyDevice(m_device, nullptr);
 }){
@@ -18,6 +20,18 @@ DeviceHandler::DeviceHandler() : VulkanHandler("DeviceHandler", [&]{
 void DeviceHandler::create(){
   create_physical_device();
   create_logical_device();
+  create_allocator();
+}
+
+void DeviceHandler::create_allocator(){
+  VmaAllocatorCreateInfo info{};
+  info.physicalDevice = m_physical_device;
+  info.device = m_device;
+  info.instance = get_dependency<InstanceHandler>().get_vk_instance();
+  info.vulkanApiVersion = VK_API_VERSION_1_3;
+
+  if (vmaCreateAllocator(&info, &m_allocator) != VK_SUCCESS)
+    throw std::runtime_error("FATAL ERROR: Failed to create VMA allocator.");
 }
 
 void DeviceHandler::create_physical_device(){

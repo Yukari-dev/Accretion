@@ -1,4 +1,5 @@
 #include "vulkan_core/Context.hpp"
+#include "vulkan_core/handlers/DeviceHandler.hpp"
 #include <SDL3/SDL_events.h>
 
 namespace Accretion{
@@ -24,6 +25,7 @@ void Context::run(){
         if(!running) break;
         m_renderer->draw_frame();
     }
+    vkDeviceWaitIdle(m_handle_manager->find_handler_by_name<DeviceHandler>("DeviceHandler").get_device());
 }
 
 }

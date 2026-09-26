@@ -1,5 +1,5 @@
 #pragma once
-#include "vma/vk_mem_alloc.h"
+#include "vk_mem_alloc.h"
 #include "vulkan_core/HandleManager.hpp"
 #include "vulkan_core/Renderer.hpp"
 #include <memory>

@@ -1,5 +1,8 @@
 #include "vulkan_core/Renderer.hpp"
+#include "vulkan_core/handlers/DeviceHandler.hpp"
+#include "vk_mem_alloc.h"
 #include <vulkan/vulkan.hpp>
+#include <glm/glm.hpp>
 
 namespace Accretion{
 
@@ -98,6 +101,7 @@ void Renderer::update_frame(){
 
 void Renderer::record_frame(){
   VkCommandBuffer& cmd = m_command_buffer->get_command_buffer(m_current_frame);
+  m_pipeline->get_shader_instance().bind(cmd, m_pipeline->get_pipeline_layout());
   vkCmdDraw(cmd, 3, 1, 0, 0);
 }
 
