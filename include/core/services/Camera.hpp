@@ -1,11 +1,12 @@
 #pragma once
+#include "core/services/IService.hpp"
 #include "core/InputSystem.hpp"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace Accretion{
 
-class Camera{
+class Camera : public IService{
 public:
   void update(const InputState& state, float dt);
 

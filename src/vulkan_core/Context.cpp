@@ -7,7 +7,8 @@ namespace Accretion{
 Context::Context(){
     m_handle_manager = std::make_unique<HandleManager>();
     m_handle_manager->initialize(800, 600, "Accretion");
-    m_renderer = std::make_unique<Renderer>(*m_handle_manager, m_camera);
+    m_services_registry.initialize();
+    m_renderer = std::make_unique<Renderer>(*m_handle_manager, m_services_registry.get<Camera>());
 }
 
 Context::~Context(){
@@ -17,6 +18,9 @@ Context::~Context(){
 void Context::run(){
     bool running{true};
     SDL_Event e{};
+
+    FrameContext frame_ctx{m_time, m_input, m_services_registry};
+    Camera& camera = m_services_registry.get<Camera>();
     while(running){
         m_input.begin_frame();
         while(SDL_PollEvent(&e)){
@@ -25,7 +29,7 @@ void Context::run(){
         }
         if(!running) break;
         m_time.update();
-        m_camera.update(m_input.get_state(), m_time.get_delta_time());
+        camera.update(m_input.get_state(), m_time.get_delta_time());
         m_renderer->draw_frame();
     }
     vkDeviceWaitIdle(m_handle_manager->find_handler_by_name<DeviceHandler>("DeviceHandler").get_device());

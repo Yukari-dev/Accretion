@@ -1,5 +1,5 @@
 #pragma once
-#include "core/Camera.hpp"
+#include "core/services/Camera.hpp"
 #include "vulkan_core/HandleManager.hpp"
 #include "vulkan_core/handlers/CommandBufferHandler.hpp"
 #include "vulkan_core/handlers/PipelineHandler.hpp"

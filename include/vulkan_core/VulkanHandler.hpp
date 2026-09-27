@@ -45,7 +45,6 @@ public:
     auto it = std::find_if(
       m_dependecies.begin(), m_dependecies.end(),
       [&](const auto& pair){
-        std::cout << "INFO: Searching: " << pair.first << '\n';
         return pair.first  == name;
       }
     );

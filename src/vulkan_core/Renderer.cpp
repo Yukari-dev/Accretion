@@ -105,6 +105,7 @@ void Renderer::record_frame(){
   ShaderInstance& instance = m_pipeline->get_shader_instance();
 
   instance.set(instance.get_location("camera.u_view_proj"), m_camera.get_view_proj());
+  instance.set(instance.get_location("camera.u_pos"), m_camera.get_position());
   instance.bind(cmd, m_pipeline->get_pipeline_layout());
   vkCmdDraw(cmd, 3, 1, 0, 0);
 }

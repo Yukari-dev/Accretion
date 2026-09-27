@@ -112,6 +112,10 @@ void ShaderInstance::set(UniformLocation loc, glm::vec2 v){
   set<glm::vec2>(loc, v);
 }
 
+void ShaderInstance::set(UniformLocation loc, glm::vec3 v){
+  set<glm::vec3>(loc, v);
+}
+
 void ShaderInstance::set(UniformLocation loc, glm::mat4 v){
   set<glm::mat4>(loc, v);
 }

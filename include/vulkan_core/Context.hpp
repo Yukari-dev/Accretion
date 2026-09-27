@@ -1,7 +1,8 @@
 #pragma once
 #include "core/InputSystem.hpp"
+#include "core/ServiceRegistry.hpp"
 #include "core/Time.hpp"
-#include "core/Camera.hpp"
+#include "core/services/Camera.hpp"
 #include "vk_mem_alloc.h"
 #include "vulkan_core/HandleManager.hpp"
 #include "vulkan_core/Renderer.hpp"
@@ -9,6 +10,12 @@
 #include <vulkan/vulkan.hpp>
 
 namespace Accretion {
+
+struct FrameContext{
+  const Time& time;
+  const InputSystem& input;
+  ServiceRegistry& service_registry;
+};
 
 class Context {
 public:
@@ -27,6 +34,7 @@ private:
   std::unique_ptr<Renderer> m_renderer{nullptr};
   Time m_time{};
   InputSystem m_input{};
+  ServiceRegistry m_services_registry{};
   Camera m_camera{};
 };
 
