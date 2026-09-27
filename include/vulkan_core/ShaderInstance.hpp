@@ -1,8 +1,14 @@
 #pragma once
 #include "vk_mem_alloc.h"
 #include "vulkan_core/Shader.hpp"
+#include <glm/glm.hpp>
 
 namespace Accretion{
+
+struct UniformLocation{
+  uint32_t offset{};
+  bool valid{};
+};
 
 class ShaderInstance{
 public:
@@ -11,14 +17,23 @@ public:
 
   void bind(VkCommandBuffer cmd, VkPipelineLayout layout);
 
-  void set(const std::string& name, float v);
+  UniformLocation get_location(const std::string& name);
+
+  void set(UniformLocation loc, float v);
+  void set(UniformLocation loc, glm::vec2 v);
+  void set(UniformLocation loc, glm::vec3 v);
+  void set(UniformLocation loc, glm::mat4 v);
 
   ShaderInstance(ShaderInstance&&) noexcept;
   ShaderInstance& operator=(ShaderInstance&&) noexcept;
   ShaderInstance(const ShaderInstance&) = delete;
   ShaderInstance& operator=(const ShaderInstance&) = delete;
 private:
+  void cache_shader_variables();
   void create_buffer();
+
+  template<typename T>
+  void set(UniformLocation loc, const T& v);
 private:
   Shader& m_shader;
   VkDevice& m_device;
@@ -33,7 +48,8 @@ private:
   VmaAllocation m_allocation{};
   VmaAllocationInfo m_allocation_info{};
 
-  std::vector<ShaderVariable> m_variables{};
+  std::unordered_map<std::string, ShaderVariable> m_variables{};
+  std::unordered_map<std::string, ShaderVariable::Member> m_flat_member_lookup;
 };
 
 }

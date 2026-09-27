@@ -1,4 +1,5 @@
 #pragma once
+#include "core/Camera.hpp"
 #include "vulkan_core/HandleManager.hpp"
 #include "vulkan_core/handlers/CommandBufferHandler.hpp"
 #include "vulkan_core/handlers/PipelineHandler.hpp"
@@ -12,7 +13,7 @@ class DeviceHandler;
 
 class Renderer{
 public:
-  Renderer(HandleManager& handler_manager);
+  Renderer(HandleManager& handler_manager, Camera& camera);
 
   void draw_frame();
 private:
@@ -26,6 +27,8 @@ private:
   uint32_t m_current_frame{}, m_image_index{};
 
   HandleManager& m_handler_manager;
+
+  Camera& m_camera;
 
   SDLHandler* m_sdl{nullptr};
   DeviceHandler* m_device{nullptr};

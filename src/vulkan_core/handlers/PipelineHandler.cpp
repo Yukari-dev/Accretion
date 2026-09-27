@@ -182,7 +182,6 @@ void PipelineHandler::create(){
     throw std::runtime_error("FATAL ERROR: Failed to create Graphics Pipeline.");
 
   m_shader_instance.emplace(vert_shader, device, allocator, descriptor_layout);
-  m_shader_instance->set("u_offset_x", 1);
 }
 
 }

@@ -1,7 +1,6 @@
 #include "vulkan_core/Shader.hpp"
 #include "spirv_reflect.h"
 #include "vulkan_core/utils/VulkanUtils.hpp"
-#include <iostream>
 #include <stdexcept>
 
 namespace Accretion{
@@ -70,9 +69,9 @@ void Shader::reflect(const std::string& path){
       member.name = binding->block.members[i].name;
       member.size = binding->block.members[i].size;
       member.offset = binding->block.members[i].offset;
-      variable.members.push_back(member);
+      variable.members.emplace(member.name, member);
     }
-    m_variables.push_back(variable);
+    m_variables.emplace(variable.name, variable);
   }
 
   spvReflectDestroyShaderModule(&module);

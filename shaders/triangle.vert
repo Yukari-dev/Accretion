@@ -1,8 +1,9 @@
 #version 450 
 
 layout(set = 0, binding = 0) uniform Camera{
-  float u_offset_x;
-} camera; 
+  mat4 u_view_proj;
+  vec3 u_pos;
+} camera;
 
 vec2 positions[3] = vec2[](
   vec2( 0.0,-0.5),
@@ -11,6 +12,5 @@ vec2 positions[3] = vec2[](
 );
 
 void main(){
-  vec2 offset = vec2(camera.u_offset_x, 0);
-  gl_Position = vec4(positions[gl_VertexIndex] + offset, 0.0, 1.0);
+  gl_Position = camera.u_view_proj * vec4(positions[gl_VertexIndex], 0.0, 1.0);
 }

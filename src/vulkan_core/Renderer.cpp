@@ -3,10 +3,11 @@
 #include "vk_mem_alloc.h"
 #include <vulkan/vulkan.hpp>
 #include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace Accretion{
 
-Renderer::Renderer(HandleManager& handler_manager) : m_handler_manager(handler_manager){
+Renderer::Renderer(HandleManager& handler_manager, Camera& camera) : m_handler_manager(handler_manager), m_camera(camera){
   m_sdl = &m_handler_manager.find_handler_by_name<SDLHandler>("SDLHandler");
   m_device = &m_handler_manager.find_handler_by_name<DeviceHandler>("DeviceHandler");
   m_swap_chain = &m_handler_manager.find_handler_by_name<SwapChainHandler>("SwapChainHandler");
@@ -101,7 +102,10 @@ void Renderer::update_frame(){
 
 void Renderer::record_frame(){
   VkCommandBuffer& cmd = m_command_buffer->get_command_buffer(m_current_frame);
-  m_pipeline->get_shader_instance().bind(cmd, m_pipeline->get_pipeline_layout());
+  ShaderInstance& instance = m_pipeline->get_shader_instance();
+
+  instance.set(instance.get_location("camera.u_view_proj"), m_camera.get_view_proj());
+  instance.bind(cmd, m_pipeline->get_pipeline_layout());
   vkCmdDraw(cmd, 3, 1, 0, 0);
 }
 

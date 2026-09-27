@@ -1,4 +1,7 @@
 #pragma once
+#include "core/InputSystem.hpp"
+#include "core/Time.hpp"
+#include "core/Camera.hpp"
 #include "vk_mem_alloc.h"
 #include "vulkan_core/HandleManager.hpp"
 #include "vulkan_core/Renderer.hpp"
@@ -22,6 +25,9 @@ public:
 private:
   std::unique_ptr<HandleManager> m_handle_manager{nullptr};
   std::unique_ptr<Renderer> m_renderer{nullptr};
+  Time m_time{};
+  InputSystem m_input{};
+  Camera m_camera{};
 };
 
 }

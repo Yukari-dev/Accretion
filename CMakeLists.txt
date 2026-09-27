@@ -41,6 +41,7 @@ add_custom_target(CompileShaders ALL DEPENDS ${SPIRV_OUTPUTS})
 
 file(GLOB_RECURSE ACCRETION_SOURCES
     "src/vulkan_core/*.cpp"
+    "src/core/*.cpp"
     "third_party/*c"
 )
 

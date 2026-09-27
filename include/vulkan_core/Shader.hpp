@@ -1,4 +1,5 @@
 #pragma once
+#include <unordered_map>
 #include <vulkan/vulkan.hpp>
 #include <string>
 
@@ -17,7 +18,7 @@ struct ShaderVariable{
     uint32_t offset{};
     uint32_t size{};
   };
-  std::vector<Member> members{};
+  std::unordered_map<std::string, Member> members{};
 };
 
 class Shader{
@@ -34,7 +35,7 @@ public:
 
   VkShaderModule get_module() const { return m_shader_module; }
   VkShaderStageFlagBits get_stage() const { return m_stage; }
-  const std::vector<ShaderVariable>& get_variables() const { return m_variables; }
+  const std::unordered_map<std::string, ShaderVariable>& get_variables() const { return m_variables; }
 private:
   void reflect(const std::string& path);
 private:
@@ -42,7 +43,7 @@ private:
   VkShaderModule m_shader_module{};
   VkShaderStageFlagBits m_stage{VK_SHADER_STAGE_VERTEX_BIT};
 
-  std::vector<ShaderVariable> m_variables{};
+  std::unordered_map<std::string, ShaderVariable> m_variables{};
 };
 
 }

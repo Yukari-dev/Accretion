@@ -1,5 +1,7 @@
 #include "vulkan_core/ShaderInstance.hpp"
+#include <chrono>
 #include <cstring>
+#include <iostream>
 #include <stdexcept>
 
 namespace Accretion{
@@ -7,6 +9,7 @@ namespace Accretion{
 ShaderInstance::ShaderInstance(Shader& shader, VkDevice& device, VmaAllocator& allocator, VkDescriptorSetLayout& layout) 
 : m_shader(shader), m_device(device), m_allocator(allocator), m_descriptor_layout(layout){
   create_buffer();
+  cache_shader_variables();
 }
 
 ShaderInstance::~ShaderInstance(){
@@ -18,8 +21,8 @@ void ShaderInstance::create_buffer(){
   m_variables = m_shader.get_variables();
 
   const ShaderVariable* ubo{nullptr};
-  for(auto& var : m_variables){
-    ubo = &var;
+  for(auto& pair : m_variables){
+    ubo = &pair.second;
     break;
   }
   if (!ubo)
@@ -85,14 +88,38 @@ void ShaderInstance::bind(VkCommandBuffer cmd, VkPipelineLayout layout){
   );
 }
 
-void ShaderInstance::set(const std::string& name, float v){
-  for(auto& var : m_variables){
-    for(auto& member : var.members){
-      if(member.name == name){
-        std::memcpy(static_cast<char*>(m_allocation_info.pMappedData) + member.offset, &v, sizeof(float));
-      }
+void ShaderInstance::cache_shader_variables(){
+  for(const auto& [ubo_name, ubo_var] : m_variables){
+    for(const auto& [member_name, member] : ubo_var.members){
+      m_flat_member_lookup[ubo_name + "." + member_name] = member;
+      m_flat_member_lookup[member_name] = member;
     }
   }
+}
+
+UniformLocation ShaderInstance::get_location(const std::string& name){
+  auto member_it = m_flat_member_lookup.find(name);
+  if(member_it != m_flat_member_lookup.end())
+    return {member_it->second.offset, true};
+  return {0, false};
+}
+
+void ShaderInstance::set(UniformLocation loc, float v){
+  set<float>(loc, v);
+}
+
+void ShaderInstance::set(UniformLocation loc, glm::vec2 v){
+  set<glm::vec2>(loc, v);
+}
+
+void ShaderInstance::set(UniformLocation loc, glm::mat4 v){
+  set<glm::mat4>(loc, v);
+}
+
+template <typename T>
+void ShaderInstance::set(UniformLocation loc, const T& v){
+  if(!loc.valid) return;
+  std::memcpy(static_cast<char*>(m_allocation_info.pMappedData) + loc.offset, &v, sizeof(T));
 }
 
 }
