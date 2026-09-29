@@ -27,16 +27,20 @@ void PipelineHandler::create(){
   Shader vert_shader = Shader("shaders/triangle.vert.spv", device);
   Shader frag_shader = Shader("shaders/triangle.frag.spv", device);
 
-  VkDescriptorSetLayoutBinding binding{};
-  binding.binding = 0;
-  binding.descriptorCount = 1;
-  binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+  std::vector<VkDescriptorSetLayoutBinding> bindings{};
+  for(const auto& [name, var] : vert_shader.get_variables()){
+    VkDescriptorSetLayoutBinding binding;
+    binding.binding = var.binding;
+    binding.descriptorCount = 1;
+    binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+    bindings.push_back(binding);
+  }
 
   VkDescriptorSetLayoutCreateInfo descriptor_layout_info{};
   descriptor_layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-  descriptor_layout_info.bindingCount = 1;
-  descriptor_layout_info.pBindings = &binding;
+  descriptor_layout_info.bindingCount = static_cast<uint32_t>(bindings.size());
+  descriptor_layout_info.pBindings = bindings.data();
 
   VkDescriptorSetLayout descriptor_layout{};
   vkCreateDescriptorSetLayout(device, &descriptor_layout_info, nullptr, &descriptor_layout);
@@ -154,8 +158,8 @@ void PipelineHandler::create(){
 
   VkPipelineDepthStencilStateCreateInfo depth_stencil{};
   depth_stencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-  depth_stencil.depthTestEnable = VK_TRUE;
-  depth_stencil.depthWriteEnable = VK_TRUE;
+  depth_stencil.depthTestEnable = VK_FALSE;
+  depth_stencil.depthWriteEnable = VK_FALSE;
   depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS;
   depth_stencil.depthBoundsTestEnable = VK_FALSE;
   depth_stencil.stencilTestEnable = VK_FALSE;

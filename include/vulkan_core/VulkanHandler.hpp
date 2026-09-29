@@ -63,7 +63,6 @@ public:
     auto it = std::find_if(
       m_requested_dependencies.begin(), m_dependecies.end(),
       [&](const auto& other){
-        std::cout << "INFO: Searching: " << other << '\n';
         return other == name;
       }
     );

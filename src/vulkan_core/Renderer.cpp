@@ -106,6 +106,7 @@ void Renderer::record_frame(){
 
   instance.set(instance.get_location("camera.u_view_proj"), m_camera.get_view_proj());
   instance.set(instance.get_location("camera.u_pos"), m_camera.get_position());
+  instance.set(instance.get_location("data.u_color"), glm::vec3(.3f, .7f, 1.f));
   instance.bind(cmd, m_pipeline->get_pipeline_layout());
   vkCmdDraw(cmd, 3, 1, 0, 0);
 }

@@ -6,8 +6,25 @@
 namespace Accretion{
 
 struct UniformLocation{
+  std::string name;
+  uint32_t binding{};
   uint32_t offset{};
   bool valid{};
+};
+
+struct MemberRef{
+  uint32_t buffer_binding{};
+  uint32_t offset{};
+  uint32_t size{};
+};
+
+struct BufferData{
+  VkBuffer buffer{};
+  VmaAllocation alloc{};
+  VmaAllocationInfo alloc_info{};
+  uint32_t binding{};
+  uint32_t offset{};
+  uint32_t size{};
 };
 
 class ShaderInstance{
@@ -18,6 +35,8 @@ public:
   void bind(VkCommandBuffer cmd, VkPipelineLayout layout);
 
   UniformLocation get_location(const std::string& name);
+
+  const std::unordered_map<std::string, ShaderVariable> get_variables() const { return m_variables; }
 
   void set(UniformLocation loc, float v);
   void set(UniformLocation loc, glm::vec2 v);
@@ -38,15 +57,14 @@ private:
   Shader& m_shader;
   VkDevice& m_device;
 
-  VkBuffer m_buffer{};
+  std::unordered_map<uint32_t, BufferData> m_buffers{};
+  std::unordered_map<std::string, MemberRef> m_member_look_up{};
 
   VkDescriptorSetLayout m_descriptor_layout{};
   VkDescriptorPool m_descriptor_pool{};
   VkDescriptorSet m_descriptor_set{};
 
   VmaAllocator& m_allocator;
-  VmaAllocation m_allocation{};
-  VmaAllocationInfo m_allocation_info{};
 
   std::unordered_map<std::string, ShaderVariable> m_variables{};
   std::unordered_map<std::string, ShaderVariable::Member> m_flat_member_lookup;

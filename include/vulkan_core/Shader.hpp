@@ -9,6 +9,8 @@ struct ShaderVariable{
   std::string name{};
   uint32_t binding{};
   uint32_t set{};
+  VkDescriptorType type{};
+  VkBufferUsageFlagBits usage{};
   
   uint32_t offset{};
   uint32_t size{};
@@ -38,6 +40,8 @@ public:
   const std::unordered_map<std::string, ShaderVariable>& get_variables() const { return m_variables; }
 private:
   void reflect(const std::string& path);
+
+  VkBufferUsageFlagBits get_buffer_usage(VkDescriptorType type);
 private:
   VkDevice& m_device;
   VkShaderModule m_shader_module{};

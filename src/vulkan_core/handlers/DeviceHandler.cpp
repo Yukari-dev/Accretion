@@ -30,6 +30,11 @@ void DeviceHandler::create_allocator(){
   info.instance = get_dependency<InstanceHandler>().get_vk_instance();
   info.vulkanApiVersion = VK_API_VERSION_1_3;
 
+  VmaVulkanFunctions vulkanFunctions{};
+  vulkanFunctions.vkGetInstanceProcAddr = &vkGetInstanceProcAddr;
+  vulkanFunctions.vkGetDeviceProcAddr = &vkGetDeviceProcAddr;
+  info.pVulkanFunctions = &vulkanFunctions;
+
   if (vmaCreateAllocator(&info, &m_allocator) != VK_SUCCESS)
     throw std::runtime_error("FATAL ERROR: Failed to create VMA allocator.");
 }

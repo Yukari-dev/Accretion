@@ -1,7 +1,5 @@
 #include "vulkan_core/ShaderInstance.hpp"
-#include <chrono>
 #include <cstring>
-#include <iostream>
 #include <stdexcept>
 
 namespace Accretion{
@@ -13,36 +11,53 @@ ShaderInstance::ShaderInstance(Shader& shader, VkDevice& device, VmaAllocator& a
 }
 
 ShaderInstance::~ShaderInstance(){
-  if(m_buffer)
-    vmaDestroyBuffer(m_allocator, m_buffer, m_allocation);
+  for(auto& data : m_buffers)
+    vmaDestroyBuffer(m_allocator, data.second.buffer, data.second.alloc);
 }
 
 void ShaderInstance::create_buffer(){
   m_variables = m_shader.get_variables();
 
-  const ShaderVariable* ubo{nullptr};
-  for(auto& pair : m_variables){
-    ubo = &pair.second;
-    break;
+  for(auto& [block_name, var] : m_variables){
+    if (var.type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) continue;
+
+    for(auto& [member_name, member] : var.members){
+      m_member_look_up[member_name] = MemberRef{var.binding, member.offset, member.size};
+      m_member_look_up[block_name + "." + member_name] = m_member_look_up[member_name];
+    }
   }
-  if (!ubo)
-    throw std::runtime_error("ShaderInstance: no UBO in shader");
 
-  VkBufferCreateInfo info{};
-  info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-  info.size = ubo->size;
-  info.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-  info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  for(const auto& [name, var] : m_variables){
+    if(var.size == 0 || var.type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER) continue;
+    VkBufferCreateInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    info.size = var.size;
+    info.usage = var.usage;
+    info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-  VmaAllocationCreateInfo alloc_info{};
-  alloc_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-  alloc_info.usage = VMA_MEMORY_USAGE_AUTO;
+    VmaAllocationCreateInfo alloc_create_info{};
+    alloc_create_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+    alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO;
 
-  if(vmaCreateBuffer(m_allocator, &info, &alloc_info, &m_buffer, &m_allocation, &m_allocation_info) != VK_SUCCESS)
-    throw std::runtime_error("ERROR: Failed to create buffer using VMA.");
+    VkBuffer buffer{};
+    VmaAllocation alloc{};
+    VmaAllocationInfo allocation_info{};
+    VkResult res = vmaCreateBuffer(m_allocator, &info, &alloc_create_info, &buffer, &alloc, &allocation_info);
+    if(res != VK_SUCCESS)
+      throw std::runtime_error("ERROR: Failed to create buffer using VMA.");
+
+    BufferData data{};
+    data.buffer = buffer;
+    data.alloc = alloc;
+    data.alloc_info = allocation_info;
+    data.binding = var.binding;
+    data.offset = var.offset;
+    data.size = var.size;
+    m_buffers.emplace(var.binding, data);
+  }
 
   VkDescriptorPoolSize pool_size{};
-  pool_size.descriptorCount = 1;
+  pool_size.descriptorCount = static_cast<uint32_t>(m_buffers.size());
   pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 
   VkDescriptorPoolCreateInfo pool_info{};
@@ -63,21 +78,27 @@ void ShaderInstance::create_buffer(){
   if(vkAllocateDescriptorSets(m_device, &set_info, &m_descriptor_set) != VK_SUCCESS)
     throw std::runtime_error("ERROR: Failed to create Descriptor Set.");
 
-  VkDescriptorBufferInfo descriptor_buffer{};
-  descriptor_buffer.buffer = m_buffer;
-  descriptor_buffer.offset = 0;
-  descriptor_buffer.range = ubo->size;
+  std::vector<VkWriteDescriptorSet> writes;
+  std::vector<VkDescriptorBufferInfo> buffer_infos;
+  buffer_infos.reserve(m_buffers.size());
+  for(const auto& [binding, buffer_data] : m_buffers){
+    VkDescriptorBufferInfo descriptor_buffer{};
+    descriptor_buffer.buffer = buffer_data.buffer;
+    descriptor_buffer.offset = 0;
+    descriptor_buffer.range = buffer_data.size;
+    buffer_infos.push_back(descriptor_buffer);
 
-  VkWriteDescriptorSet write{};
-  write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-  write.dstSet = m_descriptor_set;
-  write.dstBinding = ubo->binding;
-  write.dstArrayElement = 0;
-  write.descriptorCount = 1;
-  write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  write.pBufferInfo = &descriptor_buffer;
-
-  vkUpdateDescriptorSets(m_device, 1, &write, 0, nullptr);
+    VkWriteDescriptorSet write{};
+    write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    write.dstSet = m_descriptor_set;
+    write.dstBinding = binding;
+    write.dstArrayElement = 0;
+    write.descriptorCount = 1;
+    write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    write.pBufferInfo = &buffer_infos.back();
+    writes.push_back(write);
+  }
+  vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 }
 
 void ShaderInstance::bind(VkCommandBuffer cmd, VkPipelineLayout layout){
@@ -98,10 +119,11 @@ void ShaderInstance::cache_shader_variables(){
 }
 
 UniformLocation ShaderInstance::get_location(const std::string& name){
-  auto member_it = m_flat_member_lookup.find(name);
-  if(member_it != m_flat_member_lookup.end())
-    return {member_it->second.offset, true};
-  return {0, false};
+  auto it = m_member_look_up.find(name);
+  if(it != m_member_look_up.end()){
+    return {name, it->second.buffer_binding, it->second.offset, true};
+  }
+  return {"", 0, 0, false};
 }
 
 void ShaderInstance::set(UniformLocation loc, float v){
@@ -123,7 +145,8 @@ void ShaderInstance::set(UniformLocation loc, glm::mat4 v){
 template <typename T>
 void ShaderInstance::set(UniformLocation loc, const T& v){
   if(!loc.valid) return;
-  std::memcpy(static_cast<char*>(m_allocation_info.pMappedData) + loc.offset, &v, sizeof(T));
+  auto& buf = m_buffers.at(loc.binding);
+  std::memcpy(static_cast<char*>(buf.alloc_info.pMappedData) + loc.offset, &v, sizeof(T));
 }
 
 }

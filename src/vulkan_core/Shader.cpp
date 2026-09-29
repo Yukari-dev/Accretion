@@ -64,6 +64,9 @@ void Shader::reflect(const std::string& path){
     variable.set = binding->set;
     variable.size = binding->block.size;
     variable.offset = binding->block.offset;
+    variable.type = static_cast<VkDescriptorType>(binding->descriptor_type);
+    variable.usage = get_buffer_usage(variable.type);
+
     for(size_t i{}; i < binding->block.member_count; ++i){
       ShaderVariable::Member member{};
       member.name = binding->block.members[i].name;
@@ -75,6 +78,14 @@ void Shader::reflect(const std::string& path){
   }
 
   spvReflectDestroyShaderModule(&module);
+}
+
+VkBufferUsageFlagBits Shader::get_buffer_usage(VkDescriptorType type){
+  switch(type){
+    case VkDescriptorType::VK_DESCRIPTOR_TYPE_STORAGE_BUFFER: return VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+    case VkDescriptorType::VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER: return VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    default: return VK_BUFFER_USAGE_FLAG_BITS_MAX_ENUM;
+  }
 }
 
 }

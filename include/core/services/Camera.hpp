@@ -14,7 +14,7 @@ public:
   glm::vec3 get_position() const { return m_position; }
 
 private:
-  glm::vec3 m_position{};
+  glm::vec3 m_position{0.f, 0.f, 3.f};
   glm::vec3 m_forward{};
   glm::vec3 m_up{0.0f, 1.0f, 0.0f};
 
