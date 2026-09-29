@@ -62,18 +62,28 @@ void Shader::reflect(const std::string& path){
     variable.name = binding->name;
     variable.binding = binding->binding;
     variable.set = binding->set;
-    variable.size = binding->block.size;
     variable.offset = binding->block.offset;
     variable.type = static_cast<VkDescriptorType>(binding->descriptor_type);
     variable.usage = get_buffer_usage(variable.type);
 
+    uint32_t total_size{};
     for(size_t i{}; i < binding->block.member_count; ++i){
+      const auto& spv_member = binding->block.members[i];
       ShaderVariable::Member member{};
       member.name = binding->block.members[i].name;
-      member.size = binding->block.members[i].size;
+      member.size = (spv_member.padded_size > 0) ? spv_member.padded_size : spv_member.size;
       member.offset = binding->block.members[i].offset;
       variable.members.emplace(member.name, member);
+
+      uint32_t member_end = member.offset + member.size;
+      if(member_end > total_size)
+        total_size = member_end;
     }
+  
+    if(binding->block.padded_size > 0) variable.size = binding->block.padded_size;
+    else if (binding->block.size > 0) variable.size = binding->block.size;
+    else variable.size = total_size;
+
     m_variables.emplace(variable.name, variable);
   }
 

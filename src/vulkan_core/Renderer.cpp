@@ -1,11 +1,35 @@
 #include "vulkan_core/Renderer.hpp"
+#include "core/Particle.hpp"
 #include "vulkan_core/handlers/DeviceHandler.hpp"
 #include "vk_mem_alloc.h"
 #include <vulkan/vulkan.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <random>
+#include <vulkan/vulkan_core.h>
 
 namespace Accretion{
+
+std::vector<Particle> generate_random_particles(uint32_t count, float bounds) {
+  std::vector<Particle> particles(count);
+
+  std::random_device rd;
+  std::mt19937 gen(rd());
+
+  std::uniform_real_distribution<float> dist_pos(-bounds, bounds);
+  std::uniform_real_distribution<float> dist_vel(-1.0f, 1.0f);
+
+  for (uint32_t i = 0; i < count; ++i) {
+    particles[i].position = glm::vec4(
+      dist_pos(gen),
+      dist_pos(gen),
+      dist_pos(gen),
+      1.0f 
+    );
+  }
+
+  return particles;
+}
 
 Renderer::Renderer(HandleManager& handler_manager, Camera& camera) : m_handler_manager(handler_manager), m_camera(camera){
   m_sdl = &m_handler_manager.find_handler_by_name<SDLHandler>("SDLHandler");
@@ -14,6 +38,8 @@ Renderer::Renderer(HandleManager& handler_manager, Camera& camera) : m_handler_m
   m_command_buffer = &m_handler_manager.find_handler_by_name<CommandBufferHandler>("CommandBufferHandler");
   m_sync = &m_handler_manager.find_handler_by_name<SyncHandler>("SyncHandler");
   m_pipeline = &m_handler_manager.find_handler_by_name<PipelineHandler>("PipelineHandler");
+  std::vector<Particle> initial_particles = generate_random_particles(PARTICLE_COUNT, 10.0f);
+  m_pipeline->get_shader_instance().bind_storage_buffer("particles", initial_particles.data(), PARTICLE_COUNT * sizeof(Particle));
 }
 
 void Renderer::draw_frame(){
@@ -108,7 +134,7 @@ void Renderer::record_frame(){
   instance.set(instance.get_location("camera.u_pos"), m_camera.get_position());
   instance.set(instance.get_location("data.u_color"), glm::vec3(.3f, .7f, 1.f));
   instance.bind(cmd, m_pipeline->get_pipeline_layout());
-  vkCmdDraw(cmd, 3, 1, 0, 0);
+  vkCmdDraw(cmd, 3, PARTICLE_COUNT, 0, 0);
 }
 
 void Renderer::submit_frame(){

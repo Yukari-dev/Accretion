@@ -22,9 +22,11 @@ struct BufferData{
   VkBuffer buffer{};
   VmaAllocation alloc{};
   VmaAllocationInfo alloc_info{};
+  VkDescriptorType descriptor_type{};
   uint32_t binding{};
   uint32_t offset{};
   uint32_t size{};
+  uint32_t capacity{};
 };
 
 class ShaderInstance{
@@ -32,6 +34,7 @@ public:
   ShaderInstance(Shader& shader, VkDevice& device, VmaAllocator& allocator, VkDescriptorSetLayout& layout);
   ~ShaderInstance();
 
+  void bind_storage_buffer(const std::string& name, const void* data, uint32_t size);
   void bind(VkCommandBuffer cmd, VkPipelineLayout layout);
 
   UniformLocation get_location(const std::string& name);
@@ -50,12 +53,15 @@ public:
 private:
   void cache_shader_variables();
   void create_buffer();
+  void update();
 
   template<typename T>
   void set(UniformLocation loc, const T& v);
 private:
   Shader& m_shader;
   VkDevice& m_device;
+
+  bool m_dirty{true};
 
   std::unordered_map<uint32_t, BufferData> m_buffers{};
   std::unordered_map<std::string, MemberRef> m_member_look_up{};
