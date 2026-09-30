@@ -7,8 +7,10 @@ namespace Accretion{
 
 struct ShaderVariable{
   std::string name{};
+  uint32_t location{};
   uint32_t binding{};
   uint32_t set{};
+  VkFormat format{};
   VkDescriptorType type{};
   VkBufferUsageFlagBits usage{};
   
@@ -21,6 +23,13 @@ struct ShaderVariable{
     uint32_t size{};
   };
   std::unordered_map<std::string, Member> members{};
+};
+
+struct VertexInputAttribute {
+  std::string name;
+  uint32_t location;
+  VkFormat format;
+  uint32_t size;
 };
 
 class Shader{
@@ -38,6 +47,12 @@ public:
   VkShaderModule get_module() const { return m_shader_module; }
   VkShaderStageFlagBits get_stage() const { return m_stage; }
   const std::unordered_map<std::string, ShaderVariable>& get_variables() const { return m_variables; }
+  const std::vector<VertexInputAttribute>& get_input_attributes() const { return m_input_attributes; } 
+  VkPipelineVertexInputStateCreateInfo get_vertex_input_state(
+    std::vector<VkVertexInputBindingDescription>& binding_descs, 
+    std::vector<VkVertexInputAttributeDescription>& attribute_descs, 
+    uint32_t binding_slot = 0
+  ) const;
 private:
   void reflect(const std::string& path);
 
@@ -48,6 +63,7 @@ private:
   VkShaderStageFlagBits m_stage{VK_SHADER_STAGE_VERTEX_BIT};
 
   std::unordered_map<std::string, ShaderVariable> m_variables{};
+  std::vector<VertexInputAttribute> m_input_attributes;
 };
 
 }

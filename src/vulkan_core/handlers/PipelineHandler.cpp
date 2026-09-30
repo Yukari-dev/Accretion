@@ -8,24 +8,37 @@
 namespace Accretion{
 
 PipelineHandler::PipelineHandler() : VulkanHandler("PipelineHandler", [&]{
-  if(m_pipeline)
-    vkDestroyPipeline(get_dependency<DeviceHandler>().get_device(), m_pipeline, nullptr);
-  if(m_pipeline_layout)
-    vkDestroyPipelineLayout(get_dependency<DeviceHandler>().get_device(), m_pipeline_layout, nullptr);
-  if(m_shader_instance)
-    m_shader_instance.value().ShaderInstance::~ShaderInstance();
+  for(auto& [name, pipeline] : m_pipelines)
+    vkDestroyPipeline(get_dependency<DeviceHandler>().get_device(), pipeline->handle, nullptr);
 }){
   request_dependency("SwapChainHandler");
   request_dependency("DeviceHandler");
 }
 
-void PipelineHandler::create(){
+Pipeline& PipelineHandler::create_pipeline(const std::string& name, const PipelineConfig& config){
+  auto pipeline = std::make_unique<Pipeline>();
+  
+  build(config, *pipeline);
+
+  auto [it, inserted] = m_pipelines.emplace(name, std::move(pipeline));
+  if(!inserted)
+    throw std::runtime_error("Pipeline already exists: " + name);
+
+  return *it->second;
+}
+
+Pipeline* PipelineHandler::get(const std::string& name){
+  auto it = m_pipelines.find(name);
+  return it != m_pipelines.end() ? it->second.get() : nullptr;
+}
+
+void PipelineHandler::build(const PipelineConfig& config, Pipeline& out_pipeline){
   VkDevice& device = get_dependency<DeviceHandler>().get_device();
   VmaAllocator& allocator = get_dependency<DeviceHandler>().get_allocator();
   VkExtent2D extent = get_dependency<SwapChainHandler>().get_extent();
 
-  Shader vert_shader = Shader("shaders/triangle.vert.spv", device);
-  Shader frag_shader = Shader("shaders/triangle.frag.spv", device);
+  Shader vert_shader = Shader(config.shader_config.vert_path, device);
+  Shader frag_shader = Shader(config.shader_config.frag_path, device);
 
   std::vector<VkDescriptorSetLayoutBinding> bindings{};
   for(const auto& [name, var] : vert_shader.get_variables()){
@@ -50,7 +63,7 @@ void PipelineHandler::create(){
   layout_info.setLayoutCount = 1;
   layout_info.pSetLayouts = &descriptor_layout;
 
-  if(vkCreatePipelineLayout(device, &layout_info, nullptr, &m_pipeline_layout) != VK_SUCCESS)
+  if(vkCreatePipelineLayout(device, &layout_info, nullptr, &out_pipeline.handle_layout) != VK_SUCCESS)
     throw std::runtime_error("ERROR: Failed to create Pipeline Layout.");
 
   VkPipelineShaderStageCreateInfo vert_stage_info{};
@@ -67,8 +80,9 @@ void PipelineHandler::create(){
 
   VkPipelineShaderStageCreateInfo stages[2]{vert_stage_info, frag_stage_info};
 
-  VkPipelineVertexInputStateCreateInfo vertex_input{};
-  vertex_input.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+  std::vector<VkVertexInputBindingDescription> binding_descriptions;
+  std::vector<VkVertexInputAttributeDescription> attribute_descriptions;
+  VkPipelineVertexInputStateCreateInfo vertex_input_info = vert_shader.get_vertex_input_state(binding_descriptions, attribute_descriptions, 0);
 
   VkPipelineInputAssemblyStateCreateInfo input_assembly{};
   input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -169,7 +183,7 @@ void PipelineHandler::create(){
   create_info.pNext = &rendering_info;
   create_info.stageCount = 2;
   create_info.pStages = stages;
-  create_info.pVertexInputState = &vertex_input;
+  create_info.pVertexInputState = &vertex_input_info;
   create_info.pInputAssemblyState = &input_assembly;
   create_info.pViewportState = &viewport_state;
   create_info.pRasterizationState = &rasterization_state;
@@ -177,15 +191,28 @@ void PipelineHandler::create(){
   create_info.pColorBlendState = &color_blending;
   create_info.pDynamicState = &dynamic_state;
   create_info.pDepthStencilState = &depth_stencil;
-  create_info.layout = m_pipeline_layout;
+  create_info.layout = out_pipeline.handle_layout;
   create_info.renderPass = VK_NULL_HANDLE;
   create_info.subpass = 0;
 
-  VkResult result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &create_info, nullptr, &m_pipeline);
+  VkResult result = vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &create_info, nullptr, &out_pipeline.handle);
   if(result != VK_SUCCESS)
     throw std::runtime_error("FATAL ERROR: Failed to create Graphics Pipeline.");
 
-  m_shader_instance.emplace(vert_shader, device, allocator, descriptor_layout);
+  out_pipeline.vertex_shader.emplace(config.shader_config.vert_path, device);
+  out_pipeline.fragment_shader.emplace(config.shader_config.frag_path, device);
+}
+
+void PipelineHandler::create(){
+  create_pipeline("default", get_default_config());
+}
+
+PipelineConfig PipelineHandler::get_default_config(){
+  PipelineConfig config{};
+  config.shader_config.vert_path = "shaders/default.vert.spv";
+  config.shader_config.frag_path = "shaders/default.frag.spv";
+
+  return config;
 }
 
 }

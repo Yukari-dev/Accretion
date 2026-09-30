@@ -2,7 +2,6 @@
 #include "core/InputSystem.hpp"
 #include "core/ServiceRegistry.hpp"
 #include "core/Time.hpp"
-#include "core/services/Camera.hpp"
 #include "vk_mem_alloc.h"
 #include "vulkan_core/HandleManager.hpp"
 #include "vulkan_core/Renderer.hpp"
@@ -35,7 +34,6 @@ private:
   Time m_time{};
   InputSystem m_input{};
   ServiceRegistry m_services_registry{};
-  Camera m_camera{};
 };
 
 }

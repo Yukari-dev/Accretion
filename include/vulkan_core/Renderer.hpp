@@ -1,4 +1,5 @@
 #pragma once
+#include "core/Drawable.hpp"
 #include "core/services/Camera.hpp"
 #include "vulkan_core/HandleManager.hpp"
 #include "vulkan_core/handlers/CommandBufferHandler.hpp"
@@ -17,6 +18,7 @@ public:
 
   void draw_frame();
 private:
+  void create_drawables();
   bool begin_frame();
   void update_frame();
   void record_frame();
@@ -29,6 +31,8 @@ private:
   HandleManager& m_handler_manager;
 
   Camera& m_camera;
+
+  std::vector<Drawable> m_drawables{};
 
   SDLHandler* m_sdl{nullptr};
   DeviceHandler* m_device{nullptr};

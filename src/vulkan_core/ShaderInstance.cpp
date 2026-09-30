@@ -1,6 +1,5 @@
 #include "vulkan_core/ShaderInstance.hpp"
 #include <cstring>
-#include <iostream>
 #include <stdexcept>
 
 namespace Accretion{

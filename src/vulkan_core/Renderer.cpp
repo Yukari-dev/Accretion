@@ -1,35 +1,12 @@
 #include "vulkan_core/Renderer.hpp"
-#include "core/Particle.hpp"
 #include "vulkan_core/handlers/DeviceHandler.hpp"
 #include "vk_mem_alloc.h"
 #include <vulkan/vulkan.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <random>
 #include <vulkan/vulkan_core.h>
 
 namespace Accretion{
-
-std::vector<Particle> generate_random_particles(uint32_t count, float bounds) {
-  std::vector<Particle> particles(count);
-
-  std::random_device rd;
-  std::mt19937 gen(rd());
-
-  std::uniform_real_distribution<float> dist_pos(-bounds, bounds);
-  std::uniform_real_distribution<float> dist_vel(-1.0f, 1.0f);
-
-  for (uint32_t i = 0; i < count; ++i) {
-    particles[i].position = glm::vec4(
-      dist_pos(gen),
-      dist_pos(gen),
-      dist_pos(gen),
-      1.0f 
-    );
-  }
-
-  return particles;
-}
 
 Renderer::Renderer(HandleManager& handler_manager, Camera& camera) : m_handler_manager(handler_manager), m_camera(camera){
   m_sdl = &m_handler_manager.find_handler_by_name<SDLHandler>("SDLHandler");
@@ -38,8 +15,20 @@ Renderer::Renderer(HandleManager& handler_manager, Camera& camera) : m_handler_m
   m_command_buffer = &m_handler_manager.find_handler_by_name<CommandBufferHandler>("CommandBufferHandler");
   m_sync = &m_handler_manager.find_handler_by_name<SyncHandler>("SyncHandler");
   m_pipeline = &m_handler_manager.find_handler_by_name<PipelineHandler>("PipelineHandler");
-  std::vector<Particle> initial_particles = generate_random_particles(PARTICLE_COUNT, 10.0f);
-  m_pipeline->get_shader_instance().bind_storage_buffer("particles", initial_particles.data(), PARTICLE_COUNT * sizeof(Particle));
+  create_drawables();
+}
+
+void Renderer::create_drawables(){
+  Drawable triangle{};
+  std::vector<glm::vec3> vertices{};
+  vertices.push_back(glm::vec3{ .0f,-.5f, 0.f});
+  vertices.push_back(glm::vec3{-.5f, .5f, 0.f});
+  vertices.push_back(glm::vec3{ .5f, .5f, 0.f});
+  triangle.vertex_buffer = std::make_shared<VertexBuffer>(m_device->get_device(), m_device->get_allocator());
+  triangle.vertex_buffer->create(vertices.data(), vertices.size() * sizeof(glm::vec3));
+
+  triangle.vertex_count = 3;
+  m_drawables.push_back(triangle);
 }
 
 void Renderer::draw_frame(){
@@ -98,7 +87,7 @@ void Renderer::update_frame(){
   color_info.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
   color_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
   color_info.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-  color_info.clearValue = {{0.0f, 0.0f, 0.0f, 1.0f}};
+  color_info.clearValue = {{0.02f, 0.02f, 0.02f, 1.0f}};
 
   VkRenderingInfo rendering_info{};
   rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
@@ -109,7 +98,10 @@ void Renderer::update_frame(){
 
   vkCmdBeginRendering(cmd, &rendering_info);
 
-  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline->get_pipeline());
+  VkPipeline* current_pipeline = &m_pipeline->get("default")->handle;
+  if(current_pipeline == nullptr)
+    throw std::runtime_error("ERROR: Failed to retreive the current pipeline.");
+  vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, *current_pipeline);
 
   VkViewport viewport{};
   viewport.x = 0.0f;
@@ -128,13 +120,8 @@ void Renderer::update_frame(){
 
 void Renderer::record_frame(){
   VkCommandBuffer& cmd = m_command_buffer->get_command_buffer(m_current_frame);
-  ShaderInstance& instance = m_pipeline->get_shader_instance();
-
-  instance.set(instance.get_location("camera.u_view_proj"), m_camera.get_view_proj());
-  instance.set(instance.get_location("camera.u_pos"), m_camera.get_position());
-  instance.set(instance.get_location("data.u_color"), glm::vec3(.3f, .7f, 1.f));
-  instance.bind(cmd, m_pipeline->get_pipeline_layout());
-  vkCmdDraw(cmd, 3, PARTICLE_COUNT, 0, 0);
+  for(const auto& d : m_drawables)
+    d.draw(cmd);
 }
 
 void Renderer::submit_frame(){

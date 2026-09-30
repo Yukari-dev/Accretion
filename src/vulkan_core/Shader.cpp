@@ -35,6 +35,7 @@ Shader::~Shader(){
 }
 
 void Shader::create(const std::string& path){
+  // std::string correct_path = path.ends_with(".spv") ? path : path + ".spv";
   auto source = ReadFileUint32(path);
   VkShaderModuleCreateInfo info{};
   info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -86,8 +87,84 @@ void Shader::reflect(const std::string& path){
 
     m_variables.emplace(variable.name, variable);
   }
+  
+  count = 0;
+  spvReflectEnumerateInputVariables(&module, &count, nullptr);
+  std::vector<SpvReflectInterfaceVariable*> inputs(count);
+  spvReflectEnumerateInputVariables(&module, &count, inputs.data());
+
+  m_input_attributes.clear();
+  for (const auto* input : inputs) {
+    // 1. Ignore built-in variables like gl_VertexIndex, gl_InstanceIndex, etc.
+    if (input->decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN) {
+      continue;
+    }
+
+    VertexInputAttribute attr{};
+    attr.name = input->name ? input->name : "";
+    attr.location = input->location;
+    attr.format = static_cast<VkFormat>(input->format);
+
+    // Calculate byte size based on scalar type and component count
+    uint32_t component_count = input->numeric.vector.component_count;
+    if (component_count == 0) component_count = 1;
+
+    uint32_t byte_size = (input->numeric.scalar.width / 8) * component_count;
+    attr.size = byte_size;
+
+    m_input_attributes.push_back(attr);
+  }
+
+  std::sort(
+    m_input_attributes.begin(), m_input_attributes.end(),
+    [](const VertexInputAttribute& a, const VertexInputAttribute& b) {
+      return a.location < b.location;
+    }
+  );
 
   spvReflectDestroyShaderModule(&module);
+}
+
+VkPipelineVertexInputStateCreateInfo Shader::get_vertex_input_state(
+  std::vector<VkVertexInputBindingDescription>& binding_descs,
+  std::vector<VkVertexInputAttributeDescription>& attribute_descs,
+  uint32_t binding_slot
+) const {
+  binding_descs.clear();
+  attribute_descs.clear();
+
+  if (m_input_attributes.empty()) {
+    VkPipelineVertexInputStateCreateInfo empty_info{};
+    empty_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    return empty_info;
+  }
+
+  uint32_t current_offset = 0;
+  for (const auto& attr : m_input_attributes) {
+    VkVertexInputAttributeDescription desc{};
+    desc.location = attr.location;
+    desc.binding = binding_slot;
+    desc.format = attr.format;
+    desc.offset = current_offset;
+
+    attribute_descs.push_back(desc);
+    current_offset += attr.size;
+  }
+
+  VkVertexInputBindingDescription binding{};
+  binding.binding = binding_slot;
+  binding.stride = current_offset;
+  binding.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+  binding_descs.push_back(binding);
+
+  VkPipelineVertexInputStateCreateInfo info{};
+  info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+  info.vertexBindingDescriptionCount = static_cast<uint32_t>(binding_descs.size());
+  info.pVertexBindingDescriptions = binding_descs.data();
+  info.vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute_descs.size());
+  info.pVertexAttributeDescriptions = attribute_descs.data();
+
+  return info;
 }
 
 VkBufferUsageFlagBits Shader::get_buffer_usage(VkDescriptorType type){
